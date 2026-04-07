@@ -59,5 +59,32 @@ public class JwtUtil {
             return false;
         }
     }
+
+    public Long getUserIdFromToken(String token) {
+        try {
+            return Long.valueOf(Jwts.parser()
+                    .verifyWith(secretKey)
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload()
+                    .getSubject());
+        } catch (JwtException ex) {
+            return null;
+        }
+    }
+
+    public Role getRoleFromToken(String token) {
+        try {
+            String roleName = Jwts.parser()
+                    .verifyWith(secretKey)
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload()
+                    .get("role", String.class);
+            return Role.valueOf(roleName);
+        } catch (JwtException ex) {
+            return null;
+        }
+    }
 }
 

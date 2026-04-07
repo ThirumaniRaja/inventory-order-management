@@ -1,5 +1,6 @@
 package com.guvi.inventory.DTO;
 
+import com.guvi.inventory.model.Role;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -7,7 +8,10 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class LoginRequest {
+public class RegisterRequest {
     private String username;
     private String password;
+    private String email;
+    private Role role;
 }
+
