@@ -25,7 +25,9 @@ public class AuthService {
         User user = userRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new IllegalArgumentException("Invalid username or password"));
 
-        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+        String storedHash = user.getPasswordHash() != null ? user.getPasswordHash() : user.getPassword();
+
+        if (!passwordEncoder.matches(request.getPassword(), storedHash)) {
             throw new IllegalArgumentException("Invalid username or password");
         }
 
@@ -48,8 +50,11 @@ public class AuthService {
 
         User user = new User();
         user.setUsername(request.getUsername());
+        user.setName(request.getUsername());
         user.setEmail(request.getEmail());
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        String encodedPassword = passwordEncoder.encode(request.getPassword());
+        user.setPassword(encodedPassword);
+        user.setPasswordHash(encodedPassword);
         user.setRole(request.getRole());
         user.setActive(true);
 
@@ -58,4 +63,3 @@ public class AuthService {
         return new LoginResponse(token, savedUser.getId(), savedUser.getUsername(), savedUser.getRole(), savedUser.getEmail());
     }
 }
-

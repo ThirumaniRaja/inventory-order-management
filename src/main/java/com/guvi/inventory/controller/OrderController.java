@@ -4,6 +4,13 @@ import com.guvi.inventory.DTO.CreateOrderRequest;
 import com.guvi.inventory.DTO.OrderResponse;
 import com.guvi.inventory.model.OrderStatus;
 import com.guvi.inventory.services.OrderService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -14,6 +21,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+@Tag(name = "Orders", description = "Order management endpoints (User only)")
+@SecurityRequirement(name = "Bearer Authentication")
 @RestController
 @RequestMapping("/api/orders")
 public class OrderController {
@@ -23,9 +32,8 @@ public class OrderController {
         this.orderService = orderService;
     }
 
-    /**
-     * Get all orders for the current user (requires USER role)
-     */
+    @Operation(summary = "Get user's orders", description = "Retrieve all orders for the authenticated user with pagination")
+    @ApiResponse(responseCode = "200", description = "Orders retrieved successfully")
     @GetMapping
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<Page<OrderResponse>> getMyOrders(
@@ -36,9 +44,11 @@ public class OrderController {
         return ResponseEntity.ok(orders);
     }
 
-    /**
-     * Place a new order (requires USER role)
-     */
+    @Operation(summary = "Place new order", description = "Create and place a new order with multiple items")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Order placed successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid request or insufficient stock")
+    })
     @PostMapping
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<OrderResponse> placeOrder(
@@ -53,9 +63,11 @@ public class OrderController {
         }
     }
 
-    /**
-     * Get order details (requires USER role)
-     */
+    @Operation(summary = "Get order details", description = "Retrieve details of a specific order")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Order details retrieved successfully"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - order belongs to another user")
+    })
     @GetMapping("/{orderId}")
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<OrderResponse> getOrderDetails(
@@ -70,9 +82,11 @@ public class OrderController {
         }
     }
 
-    /**
-     * Cancel an order (requires USER role)
-     */
+    @Operation(summary = "Cancel order", description = "Cancel an order and restore stock to inventory")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Order cancelled successfully"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - order belongs to another user")
+    })
     @DeleteMapping("/{orderId}")
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<Void> cancelOrder(
@@ -87,9 +101,8 @@ public class OrderController {
         }
     }
 
-    /**
-     * Get order history for specific status (requires USER role)
-     */
+    @Operation(summary = "Get orders by status", description = "Retrieve user's orders filtered by status (CREATED/CONFIRMED/CANCELLED)")
+    @ApiResponse(responseCode = "200", description = "Orders retrieved successfully")
     @GetMapping("/status/{status}")
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<Page<OrderResponse>> getOrdersByStatus(

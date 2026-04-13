@@ -16,32 +16,55 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 public class JwtFilter extends OncePerRequestFilter {
+
     private final JwtUtil jwtUtil;
 
     public JwtFilter(JwtUtil jwtUtil) {
         this.jwtUtil = jwtUtil;
     }
 
+    /**
+     * ✅ Skip JWT filter for Swagger & Auth endpoints
+     */
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getServletPath();
+
+        return path.startsWith("/swagger-ui") ||
+                path.startsWith("/v3/api-docs") ||
+                path.startsWith("/swagger-ui.html") ||
+                path.startsWith("/api/auth");
+    }
+
+    /**
+     * ✅ Main JWT validation logic
+     */
+    @Override
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain filterChain)
+            throws ServletException, IOException {
+
         String authHeader = request.getHeader("Authorization");
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
+
             String token = authHeader.substring(7);
 
             if (jwtUtil.isTokenValid(token)) {
+
                 Long userId = jwtUtil.getUserIdFromToken(token);
                 Role role = jwtUtil.getRoleFromToken(token);
 
                 if (userId != null && role != null) {
+
                     Collection<GrantedAuthority> authorities = new ArrayList<>();
                     authorities.add(new SimpleGrantedAuthority("ROLE_" + role.name()));
 
-                    UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
-                            userId, null, authorities
-                    );
+                    UsernamePasswordAuthenticationToken authentication =
+                            new UsernamePasswordAuthenticationToken(userId, null, authorities);
 
-                    SecurityContextHolder.getContext().setAuthentication(auth);
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
                 }
             }
         }
@@ -49,4 +72,3 @@ public class JwtFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 }
-
