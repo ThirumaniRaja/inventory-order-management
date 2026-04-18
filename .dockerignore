@@ -1,0 +1,6 @@
+target/
+*.md
+*.sh
+.git/
+.gitignore
+
