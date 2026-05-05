@@ -3,9 +3,13 @@ package com.guvi.inventory.model;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "products")
@@ -31,10 +35,17 @@ public class Product {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id", nullable = false)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Category category;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ProductStatus status = ProductStatus.ACTIVE;
+
+    @OneToMany(mappedBy = "product")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private List<OrderItem> orderItems = new ArrayList<>();
 }
 

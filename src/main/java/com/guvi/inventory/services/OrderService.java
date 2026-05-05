@@ -33,6 +33,10 @@ public class OrderService {
 
     @Transactional
     public OrderResponse createOrder(Long userId, CreateOrderRequest request) {
+        if (request == null || request.getItems() == null || request.getItems().isEmpty()) {
+            throw new IllegalArgumentException("Order must contain at least one item");
+        }
+
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
 
@@ -45,6 +49,16 @@ public class OrderService {
         BigDecimal totalAmount = BigDecimal.ZERO;
 
         for (OrderItemRequest itemRequest : request.getItems()) {
+            if (itemRequest == null) {
+                throw new IllegalArgumentException("Order item cannot be null");
+            }
+            if (itemRequest.getProductId() == null || itemRequest.getProductId() <= 0) {
+                throw new IllegalArgumentException("Product id must be greater than 0");
+            }
+            if (itemRequest.getQuantity() == null || itemRequest.getQuantity() <= 0) {
+                throw new IllegalArgumentException("Quantity must be greater than 0");
+            }
+
             Product product = productRepository.findById(itemRequest.getProductId())
                     .orElseThrow(() -> new IllegalArgumentException("Product not found with id: " + itemRequest.getProductId()));
 
@@ -60,13 +74,12 @@ public class OrderService {
             BigDecimal subtotal = product.getPrice().multiply(BigDecimal.valueOf(itemRequest.getQuantity()));
 
             OrderItem orderItem = new OrderItem();
-            orderItem.setOrder(order);
             orderItem.setProduct(product);
             orderItem.setQuantity(itemRequest.getQuantity());
             orderItem.setUnitPrice(product.getPrice());
             orderItem.setSubtotal(subtotal);
 
-            order.getItems().add(orderItem);
+            order.addItem(orderItem);
             totalAmount = totalAmount.add(subtotal);
 
             // Reduce stock

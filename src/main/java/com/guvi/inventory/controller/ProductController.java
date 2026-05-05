@@ -12,6 +12,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Positive;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -19,6 +22,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -27,6 +31,7 @@ import java.util.List;
 @SecurityRequirement(name = "Bearer Authentication")
 @RestController
 @RequestMapping("/api/products")
+@Validated
 public class ProductController {
     private final ProductService productService;
 
@@ -48,7 +53,7 @@ public class ProductController {
     @ApiResponse(responseCode = "201", description = "Product created successfully")
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ProductResponse> createProduct(@RequestBody ProductRequest request) {
+    public ResponseEntity<ProductResponse> createProduct(@Valid @RequestBody ProductRequest request) {
         try {
             ProductResponse response = productService.createProduct(request);
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -61,7 +66,7 @@ public class ProductController {
     @ApiResponse(responseCode = "200", description = "Product updated successfully")
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ProductResponse> updateProduct(@PathVariable Long id, @RequestBody ProductRequest request) {
+    public ResponseEntity<ProductResponse> updateProduct(@PathVariable Long id, @Valid @RequestBody ProductRequest request) {
         try {
             ProductResponse response = productService.updateProduct(id, request);
             return ResponseEntity.ok(response);
@@ -112,7 +117,7 @@ public class ProductController {
     @GetMapping("/search")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Page<ProductResponse>> searchProducts(
-            @Parameter(description = "Search term") @RequestParam String name,
+            @Parameter(description = "Search term") @RequestParam @NotBlank(message = "Search term is required") String name,
             @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.ASC) Pageable pageable) {
         Page<ProductResponse> products = productService.searchProductsByName(name, pageable);
         return ResponseEntity.ok(products);
@@ -143,7 +148,7 @@ public class ProductController {
     @GetMapping("/low-stock")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<ProductResponse>> getLowStockProducts(
-            @Parameter(description = "Stock threshold") @RequestParam(defaultValue = "10") Long threshold) {
+            @Parameter(description = "Stock threshold") @RequestParam(defaultValue = "10") @Positive(message = "Threshold must be greater than 0") Long threshold) {
         List<ProductResponse> products = productService.getLowStockProducts(threshold);
         return ResponseEntity.ok(products);
     }
