@@ -3,6 +3,7 @@ package com.guvi.inventory.services;
 import com.guvi.inventory.DTO.LoginRequest;
 import com.guvi.inventory.DTO.LoginResponse;
 import com.guvi.inventory.DTO.RegisterRequest;
+import com.guvi.inventory.DTO.RegisterResponse;
 import com.guvi.inventory.config.JwtUtil;
 import com.guvi.inventory.model.User;
 import com.guvi.inventory.repository.UserRepository;
@@ -39,7 +40,7 @@ public class AuthService {
         return new LoginResponse(token, user.getId(), user.getUsername(), user.getRole(), user.getEmail());
     }
 
-    public LoginResponse register(RegisterRequest request) {
+    public RegisterResponse register(RegisterRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new IllegalArgumentException("Username already exists");
         }
@@ -59,7 +60,13 @@ public class AuthService {
         user.setActive(true);
 
         User savedUser = userRepository.save(user);
-        String token = jwtUtil.generateToken(savedUser.getId(), savedUser.getRole());
-        return new LoginResponse(token, savedUser.getId(), savedUser.getUsername(), savedUser.getRole(), savedUser.getEmail());
+
+        return new RegisterResponse(
+                savedUser.getId(),
+                savedUser.getUsername(),
+                savedUser.getEmail(),
+                savedUser.getRole(),
+                "User registered successfully. Please login to get your token."
+        );
     }
 }

@@ -3,6 +3,7 @@ package com.guvi.inventory.controller;
 import com.guvi.inventory.DTO.LoginRequest;
 import com.guvi.inventory.DTO.LoginResponse;
 import com.guvi.inventory.DTO.RegisterRequest;
+import com.guvi.inventory.DTO.RegisterResponse;
 import com.guvi.inventory.services.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -27,7 +28,7 @@ public class AuthController {
 
     @Operation(summary = "Login user", description = "Authenticate user with username and password to get JWT token")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Login successful", 
+            @ApiResponse(responseCode = "200", description = "Login successful",
                     content = @Content(schema = @Schema(implementation = LoginResponse.class))),
             @ApiResponse(responseCode = "401", description = "Invalid credentials"),
             @ApiResponse(responseCode = "400", description = "Invalid request")
@@ -42,20 +43,19 @@ public class AuthController {
         }
     }
 
-    @Operation(summary = "Register user", description = "Create a new user account with specified role (ADMIN or USER)")
+    @Operation(summary = "Register user", description = "Create a new user account. Use /login after registration to obtain a JWT token.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "User registered successfully", 
-                    content = @Content(schema = @Schema(implementation = LoginResponse.class))),
+            @ApiResponse(responseCode = "201", description = "User registered successfully",
+                    content = @Content(schema = @Schema(implementation = RegisterResponse.class))),
             @ApiResponse(responseCode = "400", description = "Invalid request or duplicate username/email")
     })
     @PostMapping("/register")
-    public ResponseEntity<LoginResponse> register(@Valid @RequestBody RegisterRequest request) {
+    public ResponseEntity<RegisterResponse> register(@Valid @RequestBody RegisterRequest request) {
         try {
-            LoginResponse response = authService.register(request);
+            RegisterResponse response = authService.register(request);
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
     }
 }
-

@@ -3,6 +3,7 @@ package com.guvi.inventory.services;
 import com.guvi.inventory.DTO.LoginRequest;
 import com.guvi.inventory.DTO.LoginResponse;
 import com.guvi.inventory.DTO.RegisterRequest;
+import com.guvi.inventory.DTO.RegisterResponse;
 import com.guvi.inventory.config.JwtUtil;
 import com.guvi.inventory.model.Role;
 import com.guvi.inventory.model.User;
@@ -41,6 +42,8 @@ class AuthServiceTest {
         activeUser.setRole(Role.USER);
         activeUser.setActive(true);
     }
+
+    // ── LOGIN ────────────────────────────────────────────────────────────────
 
     @Test
     void login_shouldReturnTokenForValidCredentials() {
@@ -89,8 +92,10 @@ class AuthServiceTest {
         assertNotNull(authService.login(new LoginRequest("john", "secret")));
     }
 
+    // ── REGISTER ─────────────────────────────────────────────────────────────
+
     @Test
-    void register_shouldCreateUserAndReturnToken() {
+    void register_shouldCreateUserAndReturnSuccessMessage() {
         when(userRepository.existsByUsername("newuser")).thenReturn(false);
         when(userRepository.existsByEmail("new@e.com")).thenReturn(false);
         when(passwordEncoder.encode("pass")).thenReturn("encoded");
@@ -99,18 +104,26 @@ class AuthServiceTest {
             u.setId(99L);
             return u;
         });
-        when(jwtUtil.generateToken(99L, Role.USER)).thenReturn("new-token");
-        LoginResponse r = authService.register(new RegisterRequest("newuser", "pass", "new@e.com", Role.USER));
-        assertEquals("new-token", r.getToken());
+
+        RegisterResponse r = authService.register(
+                new RegisterRequest("newuser", "pass", "new@e.com", Role.USER));
+
         assertEquals(99L, r.getUserId());
+        assertEquals("newuser", r.getUsername());
+        assertEquals("new@e.com", r.getEmail());
+        assertEquals(Role.USER, r.getRole());
+        assertNotNull(r.getMessage());
         verify(userRepository).save(any());
+        // Token must NOT be generated on register
+        verifyNoInteractions(jwtUtil);
     }
 
     @Test
     void register_shouldThrowForDuplicateUsername() {
         when(userRepository.existsByUsername("john")).thenReturn(true);
         assertThrows(IllegalArgumentException.class,
-                () -> authService.register(new RegisterRequest("john", "p", "x@e.com", Role.USER)));
+                () -> authService.register(
+                        new RegisterRequest("john", "p", "x@e.com", Role.USER)));
         verify(userRepository, never()).save(any());
     }
 
@@ -119,12 +132,13 @@ class AuthServiceTest {
         when(userRepository.existsByUsername("newuser")).thenReturn(false);
         when(userRepository.existsByEmail("john@example.com")).thenReturn(true);
         assertThrows(IllegalArgumentException.class,
-                () -> authService.register(new RegisterRequest("newuser", "p", "john@example.com", Role.USER)));
+                () -> authService.register(
+                        new RegisterRequest("newuser", "p", "john@example.com", Role.USER)));
         verify(userRepository, never()).save(any());
     }
 
     @Test
-    void register_shouldEncodePassword() {
+    void register_shouldEncodePasswordAndNotCallJwt() {
         when(userRepository.existsByUsername(anyString())).thenReturn(false);
         when(userRepository.existsByEmail(anyString())).thenReturn(false);
         when(passwordEncoder.encode("raw")).thenReturn("hashed-raw");
@@ -133,8 +147,11 @@ class AuthServiceTest {
             u.setId(5L);
             return u;
         });
-        when(jwtUtil.generateToken(anyLong(), any())).thenReturn("token");
+
         authService.register(new RegisterRequest("u", "raw", "u@e.com", Role.ADMIN));
+
         verify(passwordEncoder).encode("raw");
+        // Confirm no token is issued during registration
+        verifyNoInteractions(jwtUtil);
     }
 }
