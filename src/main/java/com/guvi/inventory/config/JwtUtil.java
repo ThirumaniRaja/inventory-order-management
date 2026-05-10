@@ -19,9 +19,10 @@ public class JwtUtil {
     private final SecretKey secretKey;
 
     public JwtUtil(
-            @Value("${app.jwt.expirationMinutes}") long expirationMs,
+            @Value("${app.jwt.expirationMinutes}") long expirationMinutes,
             @Value("${app.jwt.secret}") String secret) {
-        this.expirationMs = expirationMs * 1000L;
+        // Convert minutes to milliseconds (e.g., 1440 => 24 hours)
+        this.expirationMs = expirationMinutes * 60_000L;
         byte[] bytes = secret.getBytes(StandardCharsets.UTF_8);
         this.secretKey = Keys.hmacShaKeyFor(bytes);
     }
@@ -87,4 +88,3 @@ public class JwtUtil {
         }
     }
 }
-
